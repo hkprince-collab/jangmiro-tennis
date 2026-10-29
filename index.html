@@ -236,7 +236,7 @@
       padding: 20px;
       border-radius: 12px;
       width: 85%;
-      max-width: 300px;
+      max-width: 340px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
     .modal-title {
@@ -268,10 +268,13 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      cursor: pointer;
       font-size: 0.85rem;
+      gap: 8px;
     }
-    .history-item:hover { background: #f1f5f9; }
+    .history-item-btns {
+      display: flex;
+      gap: 4px;
+    }
   </style>
 </head>
 <body>
@@ -291,7 +294,7 @@
     <div class="sub-text">실력 숫자가 낮을수록 잘하는 선수입니다. (기본값: 1)</div>
 
     <div class="player-list" id="playerList">
-      <!-- 선수 목록이 추가되는 위치 -->
+      <!-- 선수 목록 추가 위치 -->
     </div>
 
     <div class="action-row">
@@ -365,7 +368,7 @@
   <div class="modal-overlay" id="historyModal">
     <div class="modal-content" style="background: #ffffff; color: #1f2937;">
       <div class="modal-title" style="color:#6b7280;">저장된 경기 결과 선택</div>
-      <div id="historyList" style="max-height: 200px; overflow-y: auto; margin-bottom: 14px;">
+      <div id="historyList" style="max-height: 250px; overflow-y: auto; margin-bottom: 14px;">
         <!-- 저장 기록 로드 영역 -->
       </div>
       <div class="modal-actions">
@@ -445,6 +448,9 @@
       }
     }
 
+    // ==========================================
+    // 실력 밸런스 + 파트너 중복 방지 대진표 생성 알고리즘
+    // ==========================================
     function generateMatches() {
       const N = players.length;
       if (N < 4) {
@@ -473,37 +479,110 @@
         return;
       }
 
+      const partnerCount = {};
+      const opponentCount = {};
+      const playedCount = {};
+
+      players.forEach(p1 => {
+        playedCount[p1.id] = 0;
+        partnerCount[p1.id] = {};
+        opponentCount[p1.id] = {};
+        players.forEach(p2 => {
+          if (p1.id !== p2.id) {
+            partnerCount[p1.id][p2.id] = 0;
+            opponentCount[p1.id][p2.id] = 0;
+          }
+        });
+      });
+
       rounds = [];
-      let sorted = [...players].sort((a, b) => a.skill - b.skill);
-      let pCount = Array(N).fill(0);
 
       for (let r = 1; r <= inputRounds; r++) {
-        let poolWithIndex = sorted.map((p, idx) => ({ ...p, origIdx: idx, count: pCount[idx] }));
-        poolWithIndex.sort((a, b) => a.count - b.count || a.skill - b.skill);
+        let sortedPool = [...players].sort((a, b) => playedCount[a.id] - playedCount[b.id] || (Math.random() - 0.5));
+        let activePool = sortedPool.slice(0, slotsPerRound);
 
-        const activeCount = slotsPerRound;
-        let activePool = poolWithIndex.slice(0, activeCount);
-
-        activePool.forEach(p => { pCount[p.origIdx]++; });
-
-        activePool.sort((a, b) => a.skill - b.skill);
+        activePool.forEach(p => playedCount[p.id]++);
 
         let roundMatches = [];
         let matchIdx = 1;
 
         while (activePool.length >= 4) {
-          let p1 = activePool.shift();
-          let p4 = activePool.pop();
-          let p2 = activePool.shift();
-          let p3 = activePool.pop();
+          let bestGroup = null;
+          let minPenalty = Infinity;
+
+          for (let i = 0; i < activePool.length - 3; i++) {
+            for (let j = i + 1; j < activePool.length - 2; j++) {
+              for (let k = j + 1; k < activePool.length - 1; k++) {
+                for (let l = k + 1; l < activePool.length; l++) {
+                  const p4 = [activePool[i], activePool[j], activePool[k], activePool[l]];
+
+                  const pairings = [
+                    { tA: [p4[0], p4[1]], tB: [p4[2], p4[3]] },
+                    { tA: [p4[0], p4[2]], tB: [p4[1], p4[3]] },
+                    { tA: [p4[0], p4[3]], tB: [p4[1], p4[2]] }
+                  ];
+
+                  pairings.forEach(pair => {
+                    let partnerPenalty = (partnerCount[pair.tA[0].id][pair.tA[1].id] + partnerCount[pair.tB[0].id][pair.tB[1].id]) * 1000;
+                    
+                    let oppPenalty = opponentCount[pair.tA[0].id][pair.tB[0].id] +
+                                     opponentCount[pair.tA[0].id][pair.tB[1].id] +
+                                     opponentCount[pair.tA[1].id][pair.tB[0].id] +
+                                     opponentCount[pair.tA[1].id][pair.tB[1].id];
+
+                    let skillA = pair.tA[0].skill + pair.tA[1].skill;
+                    let skillB = pair.tB[0].skill + pair.tB[1].skill;
+                    let skillDiff = Math.abs(skillA - skillB);
+
+                    let totalScore = partnerPenalty + (oppPenalty * 10) + (skillDiff * 50);
+
+                    if (totalScore < minPenalty) {
+                      minPenalty = totalScore;
+                      bestGroup = {
+                        players: p4,
+                        tA: pair.tA,
+                        tB: pair.tB
+                      };
+                    }
+                  });
+                }
+              }
+            }
+          }
+
+          if (!bestGroup) {
+            bestGroup = {
+              players: activePool.slice(0, 4),
+              tA: [activePool[0], activePool[3]],
+              tB: [activePool[1], activePool[2]]
+            };
+          }
+
+          const { tA, tB } = bestGroup;
+          partnerCount[tA[0].id][tA[1].id]++;
+          partnerCount[tA[1].id][tA[0].id]++;
+          partnerCount[bB = tB[0].id][tB[1].id]++;
+          partnerCount[tB[1].id][tB[0].id]++;
+
+          tA.forEach(pA => {
+            tB.forEach(pB => {
+              opponentCount[pA.id][pB.id]++;
+              opponentCount[pB.id][pA.id]++;
+            });
+          });
 
           roundMatches.push({
             id: `r${r}_m${matchIdx++}`,
-            teamA: [p1, p4],
-            teamB: [p2, p3],
+            teamA: tA,
+            teamB: tB,
             scoreA: '',
             scoreB: '',
             result: null
+          });
+
+          bestGroup.players.forEach(p => {
+            const idx = activePool.findIndex(x => x.id === p.id);
+            if (idx !== -1) activePool.splice(idx, 1);
           });
         }
 
@@ -685,13 +764,21 @@
       listEl.innerHTML = '';
 
       if (history.length === 0) {
-        listEl.innerHTML = '<div style="padding:10px; color:#6b7280;">저장된 기록이 없습니다.</div>';
+        listEl.innerHTML = '<div style="padding:10px; color:#6b7280; text-align:center;">저장된 기록이 없습니다.</div>';
       } else {
         history.forEach((h, idx) => {
           const item = document.createElement('div');
           item.className = 'history-item';
-          item.innerHTML = `<span>${h.time} (선수 ${h.players.length}명)</span> <button type="button" class="btn-sm">불러오기</button>`;
-          item.onclick = () => loadHistoryItem(idx);
+          item.innerHTML = `
+            <div>
+              <strong>${h.time}</strong><br>
+              <span style="font-size:0.75rem; color:#6b7280;">선수 ${h.players ? h.players.length : 0}명</span>
+            </div>
+            <div class="history-item-btns">
+              <button type="button" class="btn-sm" onclick="loadHistoryItem(${idx})">불러오기</button>
+              <button type="button" class="btn-danger btn-sm" onclick="deleteHistoryItem(${idx})">삭제</button>
+            </div>
+          `;
           listEl.appendChild(item);
         });
       }
@@ -712,6 +799,18 @@
         document.getElementById('matchSection').style.display = 'block';
         document.getElementById('rankSection').style.display = 'block';
         closeHistoryModal();
+      }
+    }
+
+    // ==========================================
+    // 이전 경기 기록 삭제 기능
+    // ==========================================
+    function deleteHistoryItem(idx) {
+      if (confirm('이 경기 기록을 삭제하시겠습니까?')) {
+        let history = JSON.parse(localStorage.getItem('jangmi_tennis_history') || '[]');
+        history.splice(idx, 1);
+        localStorage.setItem('jangmi_tennis_history', JSON.stringify(history));
+        openHistoryModal(); // 삭제 후 목록 새로고침
       }
     }
 
