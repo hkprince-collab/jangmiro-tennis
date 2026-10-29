@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>장미동호회 대진표</title>
+  <style>
+    :root {
+      --bg-color: #f2f4f8;
+      --card-bg: #ffffff;
+      --primary-color: #3b82f6;
+      --primary-hover: #2563eb;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --border-color: #e5e7eb;
+      --danger-color: #ef4444;
+      --secondary-btn: #4b5563;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 12px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sub-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      width: 100%;
+      align-items: center;
+    }
+
+    input, select {
+      padding: 8px 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    
+    #playerName {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    #playerSkill {
+      width: 60px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 6px;
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    button:active { opacity: 0.9; }
+
+    .btn-secondary { background-color: var(--secondary-btn); }
+    .btn-outline { background-color: transparent; border: 1px solid var(--border-color); color: var(--text-main); }
+    .btn-danger { background-color: var(--danger-color); }
+    .btn-sm { padding: 4px 8px; font-size: 0.8rem; }
+
+    .player-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .player-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      background: #f8fafc;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+    .player-item .info { 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      flex: 1;
+    }
+    .player-item input[type="number"] { width: 45px; padding: 2px 4px; text-align: center; }
+
+    .action-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .action-row button { flex: 1; }
+
+    .round-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin: 10px 0 6px 0;
+      color: #334155;
+    }
+
+    .match-box {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .match-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .teams-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .team-names { text-align: center; flex: 1; }
+
+    .score-inputs {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .score-inputs input {
+      width: 45px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .result-buttons {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+    }
+    .result-btn {
+      padding: 5px 8px;
+      font-size: 0.78rem;
+      background: #cbd5e1;
+      color: #334155;
+      border-radius: 4px;
+    }
+    .result-btn.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-top: 6px;
+    }
+    th, td {
+      padding: 6px;
+      text-align: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th { background: #f1f5f9; font-weight: 600; }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-content {
+      background: #22252a;
+      color: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      width: 85%;
+      max-width: 300px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .modal-title {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      margin-bottom: 6px;
+    }
+    .modal-body {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .modal-btn {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+    .modal-btn-confirm { background: #ffffff; color: #000000; }
+    .modal-btn-cancel { background: #4b5563; color: #ffffff; }
+
+    .history-item {
+      padding: 8px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .history-item:hover { background: #f1f5f9; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>장미동호회 대진표</h1>
+  </header>
+
+  <!-- 1. 참가 선수 등록 -->
+  <div class="card">
+    <div class="card-title">1. 참가 선수 등록</div>
+    <div class="input-group">
+      <input type="text" id="playerName" placeholder="이름" onkeypress="if(event.key==='Enter') addPlayer()">
+      <input type="number" id="playerSkill" value="1" min="1" placeholder="실력">
+      <button type="button" id="btnAddPlayer" onclick="addPlayer()">추가</button>
+    </div>
+    <div class="sub-text">실력 숫자가 낮을수록 잘하는 선수입니다. (기본값: 1)</div>
+
+    <div class="player-list" id="playerList">
+      <!-- 선수 목록이 추가되는 위치 -->
+    </div>
+
+    <div class="action-row">
+      <button type="button" class="btn-secondary" onclick="savePlayerList()">명단 저장</button>
+      <button type="button" class="btn-outline" onclick="loadPlayerList()">저장 명단 불러오기</button>
+    </div>
+  </div>
+
+  <!-- 대진표 설정 -->
+  <div class="card">
+    <div class="card-title">대진표 설정</div>
+    <div class="input-group" style="align-items: center;">
+      <label style="font-size:0.85rem; white-space:nowrap;">라운드 수:</label>
+      <input type="number" id="roundCount" value="3" min="1" max="20" style="width: 60px;">
+      <button type="button" onclick="generateMatches()" style="flex: 1;">대진표 만들기</button>
+    </div>
+    <div class="sub-text">
+      모든 참석자가 동일한 게임 수를 뛸 수 있도록 대진표를 생성합니다.
+    </div>
+  </div>
+
+  <!-- 2. 경기 결과 -->
+  <div class="card" id="matchSection" style="display: none;">
+    <div class="card-title">2. 경기 결과</div>
+    <div id="matchesContainer">
+      <!-- 라운드별 대진 생성 위치 -->
+    </div>
+  </div>
+
+  <!-- 3. 현재 순위 -->
+  <div class="card" id="rankSection" style="display: none;">
+    <div class="card-title">3. 현재 순위</div>
+    <div class="sub-text" id="rankSummary">승 2점 · 무 1점 · 패 0점</div>
+    <table>
+      <thead>
+        <tr>
+          <th>선수</th>
+          <th>경기</th>
+          <th>승점</th>
+          <th>게임합계</th>
+        </tr>
+      </thead>
+      <tbody id="rankTableBody">
+        <!-- 순위 자동 계산 위치 -->
+      </tbody>
+    </table>
+
+    <div class="action-row" style="margin-top:12px;">
+      <button type="button" class="btn-secondary" onclick="saveFullResult()">결과 저장</button>
+      <button type="button" class="btn-outline" onclick="exportCSV()">결과 내보내기</button>
+    </div>
+    <div class="action-row">
+      <button type="button" class="btn-danger" onclick="openResetModal()">모임 초기화</button>
+      <button type="button" class="btn-outline" onclick="openHistoryModal()">이전 경기 결과</button>
+    </div>
+  </div>
+
+  <!-- 커스텀 초기화 모달 -->
+  <div class="modal-overlay" id="resetModal">
+    <div class="modal-content">
+      <div class="modal-title">이 페이지에는</div>
+      <div class="modal-body">선수, 대진표, 점수를 모두 지울까요?</div>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn modal-btn-confirm" onclick="confirmReset()">확인</button>
+        <button type="button" class="modal-btn modal-btn-cancel" onclick="closeResetModal()">취소</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 이전 경기 결과 모달 -->
+  <div class="modal-overlay" id="historyModal">
+    <div class="modal-content" style="background: #ffffff; color: #1f2937;">
+      <div class="modal-title" style="color:#6b7280;">저장된 경기 결과 선택</div>
+      <div id="historyList" style="max-height: 200px; overflow-y: auto; margin-bottom: 14px;">
+        <!-- 저장 기록 로드 영역 -->
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn modal-btn-cancel" onclick="closeHistoryModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let players = [];
+    let rounds = [];
+
+    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+    function addPlayer() {
+      const nameInput = document.getElementById('playerName');
+      const skillInput = document.getElementById('playerSkill');
+
+      const name = nameInput.value.trim();
+      const skill = parseInt(skillInput.value) || 1;
+
+      if (!name) {
+        alert('이름을 입력해 주세요.');
+        nameInput.focus();
+        return;
+      }
+
+      players.push({ id: Date.now(), name, skill });
+      nameInput.value = '';
+      skillInput.value = '1';
+      nameInput.focus();
+      renderPlayers();
+    }
+
+    function updateSkill(id, val) {
+      const p = players.find(x => x.id === id);
+      if (p) {
+        p.skill = parseInt(val) || 1;
+      }
+    }
+
+    function removePlayer(id) {
+      players = players.filter(p => p.id !== id);
+      renderPlayers();
+    }
+
+    function renderPlayers() {
+      const listEl = document.getElementById('playerList');
+      listEl.innerHTML = '';
+      players.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'player-item';
+        item.innerHTML = `
+          <div class="info">
+            <strong>${p.name}</strong>
+            <span style="font-size:0.75rem; color:#64748b;">실력:</span>
+            <input type="number" value="${p.skill}" min="1" onchange="updateSkill(${p.id}, this.value)">
+          </div>
+          <button type="button" class="btn-danger btn-sm" onclick="removePlayer(${p.id})">삭제</button>
+        `;
+        listEl.appendChild(item);
+      });
+    }
+
+    function savePlayerList() {
+      localStorage.setItem('saved_players_roster', JSON.stringify(players));
+      alert('참가 선수 명단이 저장되었습니다.');
+    }
+
+    function loadPlayerList() {
+      const saved = localStorage.getItem('saved_players_roster');
+      if (saved) {
+        players = JSON.parse(saved);
+        renderPlayers();
+      } else {
+        alert('저장된 명단이 없습니다.');
+      }
+    }
+
+    function generateMatches() {
+      const N = players.length;
+      if (N < 4) {
+        alert('최소 4명의 선수가 등록되어야 복식 대진표를 만들 수 있습니다.');
+        return;
+      }
+
+      const inputRounds = parseInt(document.getElementById('roundCount').value) || 1;
+      const slotsPerRound = 4 * Math.floor(N / 4);
+      const minRounds = N / gcd(N, slotsPerRound);
+
+      if (inputRounds % minRounds !== 0) {
+        const reqGamesPerPlayer = (inputRounds < minRounds) 
+          ? (slotsPerRound * minRounds) / N 
+          : (slotsPerRound * (Math.ceil(inputRounds / minRounds) * minRounds)) / N;
+        
+        const suggestedRounds = inputRounds < minRounds 
+          ? minRounds 
+          : Math.ceil(inputRounds / minRounds) * minRounds;
+
+        alert(`⚠️ 입력하신 ${inputRounds}라운드로는 모든 선수의 경기 수를 동일하게 맞출 수 없습니다.\n\n` +
+              `모든 참석자(${N}명)가 동일하게 각 ${reqGamesPerPlayer}경기씩 뛰려면\n` +
+              `최소 [ ${suggestedRounds} 라운드 ] 이상(또는 ${minRounds}의 배수)으로 설정해 주세요!`);
+        
+        document.getElementById('roundCount').value = suggestedRounds;
+        return;
+      }
+
+      rounds = [];
+      let sorted = [...players].sort((a, b) => a.skill - b.skill);
+      let pCount = Array(N).fill(0);
+
+      for (let r = 1; r <= inputRounds; r++) {
+        let poolWithIndex = sorted.map((p, idx) => ({ ...p, origIdx: idx, count: pCount[idx] }));
+        poolWithIndex.sort((a, b) => a.count - b.count || a.skill - b.skill);
+
+        const activeCount = slotsPerRound;
+        let activePool = poolWithIndex.slice(0, activeCount);
+
+        activePool.forEach(p => { pCount[p.origIdx]++; });
+
+        activePool.sort((a, b) => a.skill - b.skill);
+
+        let roundMatches = [];
+        let matchIdx = 1;
+
+        while (activePool.length >= 4) {
+          let p1 = activePool.shift();
+          let p4 = activePool.pop();
+          let p2 = activePool.shift();
+          let p3 = activePool.pop();
+
+          roundMatches.push({
+            id: `r${r}_m${matchIdx++}`,
+            teamA: [p1, p4],
+            teamB: [p2, p3],
+            scoreA: '',
+            scoreB: '',
+            result: null
+          });
+        }
+
+        rounds.push({ round: r, matches: roundMatches });
+      }
+
+      renderMatches();
+      updateRankings();
+      document.getElementById('matchSection').style.display = 'block';
+      document.getElementById('rankSection').style.display = 'block';
+    }
+
+    function renderMatches() {
+      const container = document.getElementById('matchesContainer');
+      container.innerHTML = '';
+
+      rounds.forEach(r => {
+        const rTitle = document.createElement('div');
+        rTitle.className = 'round-title';
+        rTitle.innerText = `${r.round}라운드`;
+        container.appendChild(rTitle);
+
+        r.matches.forEach((m, idx) => {
+          const mBox = document.createElement('div');
+          mBox.className = 'match-box';
+
+          const nameA = m.teamA.map(p => p.name).join(' · ');
+          const nameB = m.teamB.map(p => p.name).join(' · ');
+
+          mBox.innerHTML = `
+            <div class="match-header">
+              <span>${idx + 1}경기</span>
+            </div>
+            <div class="teams-container">
+              <div class="team-names">${nameA}</div>
+              <div style="color:var(--text-muted); margin:0 6px;">VS</div>
+              <div class="team-names">${nameB}</div>
+            </div>
+            <div class="score-inputs">
+              <input type="number" min="0" value="${m.scoreA}" oninput="onScoreChange('${m.id}', 'A', this.value)">
+              <span>:</span>
+              <input type="number" min="0" value="${m.scoreB}" oninput="onScoreChange('${m.id}', 'B', this.value)">
+            </div>
+            <div class="result-buttons">
+              <button type="button" class="result-btn ${m.result === 'A' ? 'active' : ''}" onclick="setMatchResult('${m.id}', 'A')">왼쪽 승</button>
+              <button type="button" class="result-btn ${m.result === 'DRAW' ? 'active' : ''}" onclick="setMatchResult('${m.id}', 'DRAW')">무승부</button>
+              <button type="button" class="result-btn ${m.result === 'B' ? 'active' : ''}" onclick="setMatchResult('${m.id}', 'B')">오른쪽 승</button>
+              <button type="button" class="result-btn" onclick="setMatchResult('${m.id}', null)">취소</button>
+            </div>
+          `;
+          container.appendChild(mBox);
+        });
+      });
+    }
+
+    function onScoreChange(matchId, team, value) {
+      let match = findMatch(matchId);
+      if (!match) return;
+
+      if (team === 'A') match.scoreA = value;
+      if (team === 'B') match.scoreB = value;
+
+      const sA = parseInt(match.scoreA);
+      const sB = parseInt(match.scoreB);
+
+      if (!isNaN(sA) && !isNaN(sB)) {
+        if (sA > sB) match.result = 'A';
+        else if (sB > sA) match.result = 'B';
+        else match.result = 'DRAW';
+      }
+
+      renderMatches();
+      updateRankings();
+    }
+
+    function setMatchResult(matchId, res) {
+      let match = findMatch(matchId);
+      if (match) {
+        match.result = res;
+        renderMatches();
+        updateRankings();
+      }
+    }
+
+    function findMatch(matchId) {
+      for (let r of rounds) {
+        for (let m of r.matches) {
+          if (m.id === matchId) return m;
+        }
+      }
+      return null;
+    }
+
+    function updateRankings() {
+      let stats = {};
+      players.forEach(p => {
+        stats[p.id] = { name: p.name, matches: 0, wins: 0, draws: 0, losses: 0, points: 0, gameDiff: 0 };
+      });
+
+      rounds.forEach(r => {
+        r.matches.forEach(m => {
+          if (!m.result) return;
+
+          const sA = parseInt(m.scoreA) || 0;
+          const sB = parseInt(m.scoreB) || 0;
+          const diffA = sA - sB;
+          const diffB = sB - sA;
+
+          m.teamA.forEach(p => {
+            if (stats[p.id]) {
+              stats[p.id].matches++;
+              stats[p.id].gameDiff += diffA;
+              if (m.result === 'A') { stats[p.id].wins++; stats[p.id].points += 2; }
+              else if (m.result === 'DRAW') { stats[p.id].draws++; stats[p.id].points += 1; }
+              else if (m.result === 'B') { stats[p.id].losses++; }
+            }
+          });
+
+          m.teamB.forEach(p => {
+            if (stats[p.id]) {
+              stats[p.id].matches++;
+              stats[p.id].gameDiff += diffB;
+              if (m.result === 'B') { stats[p.id].wins++; stats[p.id].points += 2; }
+              else if (m.result === 'DRAW') { stats[p.id].draws++; stats[p.id].points += 1; }
+              else if (m.result === 'A') { stats[p.id].losses++; }
+            }
+          });
+        });
+      });
+
+      let rankArray = Object.values(stats);
+      rankArray.sort((a, b) => b.points - a.points || b.gameDiff - a.gameDiff);
+
+      const tbody = document.getElementById('rankTableBody');
+      tbody.innerHTML = '';
+      rankArray.forEach((st, idx) => {
+        const tr = document.createElement('tr');
+        const diffStr = st.gameDiff > 0 ? `+${st.gameDiff}` : `${st.gameDiff}`;
+        tr.innerHTML = `
+          <td style="text-align:left;">
+            <strong>${idx + 1}. ${st.name}</strong><br>
+            <span style="font-size:0.75rem; color:#64748b;">${st.wins}승 ${st.draws}무 ${st.losses}패</span>
+          </td>
+          <td>${st.matches}경기</td>
+          <td><strong>${st.points}점</strong></td>
+          <td>${diffStr}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openResetModal() { document.getElementById('resetModal').classList.add('show'); }
+    function closeResetModal() { document.getElementById('resetModal').classList.remove('show'); }
+    function confirmReset() {
+      players = [];
+      rounds = [];
+      document.getElementById('playerList').innerHTML = '';
+      document.getElementById('matchesContainer').innerHTML = '';
+      document.getElementById('rankTableBody').innerHTML = '';
+      document.getElementById('matchSection').style.display = 'none';
+      document.getElementById('rankSection').style.display = 'none';
+      closeResetModal();
+    }
+
+    function saveFullResult() {
+      const now = new Date();
+      const timeStr = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()} ${now.getHours()}:${now.getMinutes()}`;
+      const data = { time: timeStr, players, rounds };
+
+      let history = JSON.parse(localStorage.getItem('jangmi_tennis_history') || '[]');
+      history.unshift(data);
+      localStorage.setItem('jangmi_tennis_history', JSON.stringify(history));
+      alert(`[${timeStr}] 경기 결과가 저장되었습니다.`);
+    }
+
+    function openHistoryModal() {
+      const history = JSON.parse(localStorage.getItem('jangmi_tennis_history') || '[]');
+      const listEl = document.getElementById('historyList');
+      listEl.innerHTML = '';
+
+      if (history.length === 0) {
+        listEl.innerHTML = '<div style="padding:10px; color:#6b7280;">저장된 기록이 없습니다.</div>';
+      } else {
+        history.forEach((h, idx) => {
+          const item = document.createElement('div');
+          item.className = 'history-item';
+          item.innerHTML = `<span>${h.time} (선수 ${h.players.length}명)</span> <button type="button" class="btn-sm">불러오기</button>`;
+          item.onclick = () => loadHistoryItem(idx);
+          listEl.appendChild(item);
+        });
+      }
+      document.getElementById('historyModal').classList.add('show');
+    }
+
+    function closeHistoryModal() { document.getElementById('historyModal').classList.remove('show'); }
+
+    function loadHistoryItem(idx) {
+      const history = JSON.parse(localStorage.getItem('jangmi_tennis_history') || '[]');
+      const item = history[idx];
+      if (item) {
+        players = item.players || [];
+        rounds = item.rounds || [];
+        renderPlayers();
+        renderMatches();
+        updateRankings();
+        document.getElementById('matchSection').style.display = 'block';
+        document.getElementById('rankSection').style.display = 'block';
+        closeHistoryModal();
+      }
+    }
+
+    function exportCSV() {
+      let csv = "순위,선수,경기수,승점,게임합계\n";
+      const rows = document.querySelectorAll('#rankTableBody tr');
+      rows.forEach((row, i) => {
+        const cols = row.querySelectorAll('td');
+        const name = cols[0].querySelector('strong').innerText.replace(/^\d+\.\s*/, '');
+        const matches = cols[1].innerText;
+        const points = cols[2].innerText;
+        const gameDiff = cols[3].innerText;
+        csv += `${i + 1},${name},${matches},${points},${gameDiff}\n`;
+      });
+
+      const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `장미동호회_경기결과_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+    }
+  </script>
+</body>
+</html>
+        const name = cols[0].querySelector('strong').innerText.replace(/^\d+\.\s*/, '');
+        const matches = cols[1].innerText;
+        const points = cols[2].innerText;
+        const gameDiff = cols[3].innerText;
+        csv += `${i + 1},${name},${matches},${points},${gameDiff}\n`;
+      });
+
+      const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `장미동호회_경기결과_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+    }
+  </script>
+</body>
+</html>
