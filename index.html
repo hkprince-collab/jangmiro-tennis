@@ -449,7 +449,7 @@
     }
 
     // ==========================================
-    // 실력 밸런스 + 파트너 중복 방지 대진표 생성 알고리즘
+    // 실력 편중 방지(상급자끼리 팀 결성 금지) + 파트너 중복 방지 알고리즘
     // ==========================================
     function generateMatches() {
       const N = players.length;
@@ -523,18 +523,28 @@
                   ];
 
                   pairings.forEach(pair => {
+                    // 1. 파트너 중복 페널티 (1000점)
                     let partnerPenalty = (partnerCount[pair.tA[0].id][pair.tA[1].id] + partnerCount[pair.tB[0].id][pair.tB[1].id]) * 1000;
                     
+                    // 2. 상대방 중복 페널티
                     let oppPenalty = opponentCount[pair.tA[0].id][pair.tB[0].id] +
                                      opponentCount[pair.tA[0].id][pair.tB[1].id] +
                                      opponentCount[pair.tA[1].id][pair.tB[0].id] +
                                      opponentCount[pair.tA[1].id][pair.tB[1].id];
 
-                    let skillA = pair.tA[0].skill + pair.tA[1].skill;
-                    let skillB = pair.tB[0].skill + pair.tB[1].skill;
-                    let skillDiff = Math.abs(skillA - skillB);
+                    // 3. 팀 내부 실력 편중 방지 (상급자끼리 혹은 하급자끼리만 뭉치는 팀에 강력한 페널티 부여)
+                    let teamASkillSum = pair.tA[0].skill + pair.tA[1].skill;
+                    let teamBSkillSum = pair.tB[0].skill + pair.tB[1].skill;
+                    
+                    // 평균 실력과의 편차를 계산하여, 극단적으로 잘하거나 못하는 사람들끼리만 팀이 되는 것을 막음
+                    // 예컨대 실력 1과 2가 한 팀이 되면 편차가 커져서 페널티 부여
+                    let teamAuraPenalty = Math.abs(pair.tA[0].skill - pair.tA[1].skill) === 0 ? 300 : 0;
+                    let teamBuraPenalty = Math.abs(pair.tB[0].skill - pair.tB[1].skill) === 0 ? 300 : 0;
 
-                    let totalScore = partnerPenalty + (oppPenalty * 10) + (skillDiff * 50);
+                    // 4. 양 팀 간 실력 합 차이 (팽팽한 매칭 유도)
+                    let skillDiff = Math.abs(teamASkillSum - teamBSkillSum);
+
+                    let totalScore = partnerPenalty + (oppPenalty * 10) + (skillDiff * 50) + teamAuraPenalty + teamBuraPenalty;
 
                     if (totalScore < minPenalty) {
                       minPenalty = totalScore;
@@ -561,7 +571,7 @@
           const { tA, tB } = bestGroup;
           partnerCount[tA[0].id][tA[1].id]++;
           partnerCount[tA[1].id][tA[0].id]++;
-          partnerCount[bB = tB[0].id][tB[1].id]++;
+          partnerCount[tB[0].id][tB[1].id]++;
           partnerCount[tB[1].id][tB[0].id]++;
 
           tA.forEach(pA => {
@@ -772,7 +782,7 @@
           item.innerHTML = `
             <div>
               <strong>${h.time}</strong><br>
-              <span style="font-size:0.75rem; color:#6b7280;">선수 ${h.players ? h.players.length : 0}명</span>
+              <span style="font-size:0.75rem; color:#64748b;">선수 ${h.players ? h.players.length : 0}명</span>
             </div>
             <div class="history-item-btns">
               <button type="button" class="btn-sm" onclick="loadHistoryItem(${idx})">불러오기</button>
@@ -802,15 +812,12 @@
       }
     }
 
-    // ==========================================
-    // 이전 경기 기록 삭제 기능
-    // ==========================================
     function deleteHistoryItem(idx) {
       if (confirm('이 경기 기록을 삭제하시겠습니까?')) {
         let history = JSON.parse(localStorage.getItem('jangmi_tennis_history') || '[]');
         history.splice(idx, 1);
         localStorage.setItem('jangmi_tennis_history', JSON.stringify(history));
-        openHistoryModal(); // 삭제 후 목록 새로고침
+        openHistoryModal();
       }
     }
 
